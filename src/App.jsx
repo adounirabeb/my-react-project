@@ -1,14 +1,3 @@
-// Data structure for each story:
-// {
-//   objectID: unique identifier -> used as React key
-//   title: title of the article
-//   url: link to the article
-//   author: who posted it
-//   points: popularity score
-//   num_comments: number of comments
-// }
-// This structure is realistic because it matches the real Hacker News API response
-
 const stories = [
   {
     objectID: 1,
@@ -43,10 +32,23 @@ const stories = [
     num_comments: 58
   }
 ];
-function App() {
+
+function Header() {
+  return <h1>Hacker News Stories</h1>;
+}
+
+function Search() {
   return (
     <div>
-      <h1>Hacker News Stories</h1>
+      <label htmlFor="search">Search stories:</label>
+      <input type="text" id="search" />
+    </div>
+  );
+}
+
+function List() {
+  return (
+    <div>
       {stories.map((story) => (
         <div key={story.objectID}>
           <h3>
@@ -60,6 +62,16 @@ function App() {
           <hr />
         </div>
       ))}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <div>
+      <Header />
+      <Search />
+      <List />
     </div>
   );
 }
