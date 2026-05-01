@@ -1,6 +1,19 @@
 import { useState, useEffect } from "react";
 
-const Item = ({ story }) => (
+// Part 1 - Step 1,2,3 - Reusable InputWithLabel using children
+const InputWithLabel = ({ id, value, onInputChange, type = "text", children }) => (
+  <div>
+    <label htmlFor={id}>{children}</label>
+    <input
+      type={type}
+      id={id}
+      value={value}
+      onChange={onInputChange}
+    />
+  </div>
+);
+
+const Item = ({ story, onRemoveItem }) => (
   <div>
     <h3>
       <a href={story.url} target="_blank" rel="noreferrer">
@@ -10,35 +23,24 @@ const Item = ({ story }) => (
     <p>Author: {story.author}</p>
     <p>Points: {story.points}</p>
     <p>Comments: {story.num_comments}</p>
+    <button onClick={() => onRemoveItem(story)}>Delete</button>
     <hr />
   </div>
 );
 
-const List = ({ stories }) => (
+const List = ({ stories, onRemoveItem }) => (
   <div>
     {stories.map((story) => (
-      <Item key={story.objectID} story={story} />
+      <Item key={story.objectID} story={story} onRemoveItem={onRemoveItem} />
     ))}
-  </div>
-);
-
-// Step 1 & 2 - Controlled component with destructuring
-const Search = ({ searchTerm, onSearch }) => (
-  <div>
-    <label htmlFor="search">Search stories:</label>
-    <input
-      type="text"
-      id="search"
-      value={searchTerm}
-      onChange={(event) => onSearch(event.target.value)}
-    />
   </div>
 );
 
 const Header = () => <h1>Hacker News Stories</h1>;
 
 const App = () => {
-  const stories = [
+  // Step 6 - renamed to initialStories
+  const initialStories = [
     {
       objectID: 1,
       title: "React is the future of web development",
@@ -73,18 +75,27 @@ const App = () => {
     }
   ];
 
-  // Step 4 - Initialize state from localStorage with fallback
+  // Step 7 - stories as state
+  const [stories, setStories] = useState(initialStories);
+
   const [searchTerm, setSearchTerm] = useState(
     localStorage.getItem("search") || ""
   );
 
-  // Step 5 - useEffect to persist searchTerm in localStorage
   useEffect(() => {
     localStorage.setItem("search", searchTerm);
   }, [searchTerm]);
 
-  const handleSearch = (value) => {
-    setSearchTerm(value);
+  const handleSearch = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  // Step 8 - remove handler
+  const handleRemoveItem = (item) => {
+    const newStories = stories.filter(
+      (story) => story.objectID !== item.objectID
+    );
+    setStories(newStories);
   };
 
   const filteredStories = stories.filter((story) =>
@@ -94,15 +105,22 @@ const App = () => {
   return (
     <div>
       <Header />
-      <Search searchTerm={searchTerm} onSearch={handleSearch} />
-      <List stories={filteredStories} />
+      {/* Step 4 - using composition with children */}
+      <InputWithLabel
+        id="search"
+        value={searchTerm}
+        onInputChange={handleSearch}
+      >
+        <strong>Search:</strong>
+      </InputWithLabel>
+      <List stories={filteredStories} onRemoveItem={handleRemoveItem} />
     </div>
   );
 };
 
 export default App;
 
-// Step 7 - Reflection:
-// 1. A controlled component is an input whose value is controlled by React state
-// 2. A side effect is anything that affects something outside the component like localStorage or API calls
-// 3. We use useEffect so side effects run at the right time and not during rendering
+// Step 13 - Reflection:
+// 1. A component is reusable when it accepts dynamic props instead of hard-coded values
+// 2. Component composition is when a component renders content passed between its tags via children
+// 3. We pass handlers down the tree because the parent owns the state and only it can update it
