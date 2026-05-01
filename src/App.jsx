@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 
-// Part 1 - Step 1,2,3 - Reusable InputWithLabel using children
+// Step 1 - API endpoint
+const API_ENDPOINT = "https://hn.algolia.com/api/v1/search?query=";
+
 const InputWithLabel = ({ id, value, onInputChange, type = "text", children }) => (
   <div>
     <label htmlFor={id}>{children}</label>
@@ -39,58 +41,51 @@ const List = ({ stories, onRemoveItem }) => (
 const Header = () => <h1>Hacker News Stories</h1>;
 
 const App = () => {
-  // Step 6 - renamed to initialStories
-  const initialStories = [
-    {
-      objectID: 1,
-      title: "React is the future of web development",
-      url: "https://reactjs.org",
-      author: "Dan Abramov",
-      points: 500,
-      num_comments: 32
-    },
-    {
-      objectID: 2,
-      title: "Vite makes React development faster",
-      url: "https://vitejs.dev",
-      author: "Evan You",
-      points: 178,
-      num_comments: 21
-    },
-    {
-      objectID: 3,
-      title: "JavaScript is everywhere in 2026",
-      url: "https://javascript.info",
-      author: "Ilya Kantor",
-      points: 310,
-      num_comments: 45
-    },
-    {
-      objectID: 4,
-      title: "GitHub Copilot changes how developers work",
-      url: "https://github.com/features/copilot",
-      author: "Nat Friedman",
-      points: 420,
-      num_comments: 58
-    }
-  ];
-
-  // Step 7 - stories as state
-  const [stories, setStories] = useState(initialStories);
-
+  const [stories, setStories] = useState([]);
   const [searchTerm, setSearchTerm] = useState(
-    localStorage.getItem("search") || ""
+    localStorage.getItem("search") || "React"
   );
 
-  useEffect(() => {
-    localStorage.setItem("search", searchTerm);
-  }, [searchTerm]);
+  // Step 13 - url state for explicit fetching
+  const [url, setUrl] = useState(
+    `${API_ENDPOINT}${localStorage.getItem("search") || "React"}`
+  );
+
+  // Step 7 - loading state
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Step 9 - error state
+  const [isError, setIsError] = useState(false);
 
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
+    localStorage.setItem("search", event.target.value);
   };
 
-  // Step 8 - remove handler
+  // Step 14 - update url on submit
+  const handleSearchSubmit = () => {
+    setUrl(`${API_ENDPOINT}${searchTerm}`);
+  };
+
+  // Step 2,3,4 - fetch data from API
+  useEffect(() => {
+    if (!searchTerm) return;
+
+    setIsLoading(true);
+    setIsError(false);
+
+    fetch(url)
+      .then((response) => response.json())
+      .then((data) => {
+        setStories(data.hits);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setIsError(true);
+        setIsLoading(false);
+      });
+  }, [url]); // Step 15 - url as dependency
+
   const handleRemoveItem = (item) => {
     const newStories = stories.filter(
       (story) => story.objectID !== item.objectID
@@ -98,14 +93,9 @@ const App = () => {
     setStories(newStories);
   };
 
-  const filteredStories = stories.filter((story) =>
-    story.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
     <div>
       <Header />
-      {/* Step 4 - using composition with children */}
       <InputWithLabel
         id="search"
         value={searchTerm}
@@ -113,14 +103,31 @@ const App = () => {
       >
         <strong>Search:</strong>
       </InputWithLabel>
-      <List stories={filteredStories} onRemoveItem={handleRemoveItem} />
+
+      {/* Step 12 - submit button disabled when empty */}
+      <button
+        onClick={handleSearchSubmit}
+        disabled={!searchTerm}
+      >
+        Submit
+      </button>
+
+      {/* Step 10 - error message */}
+      {isError && <p>Something went wrong. Please try again.</p>}
+
+      {/* Step 8 - loading message */}
+      {isLoading ? (
+        <p>Loading ...</p>
+      ) : (
+        <List stories={stories} onRemoveItem={handleRemoveItem} />
+      )}
     </div>
   );
 };
 
 export default App;
 
-// Step 13 - Reflection:
-// 1. A component is reusable when it accepts dynamic props instead of hard-coded values
-// 2. Component composition is when a component renders content passed between its tags via children
-// 3. We pass handlers down the tree because the parent owns the state and only it can update it
+// Step 17 - Reflection:
+// 1. We use useEffect for fetching because it runs after render and keeps side effects separate
+// 2. Loading state means data is on the way. Error state means something went wrong.
+// 3. We control fetching to avoid unnecessary API calls on every keystroke
