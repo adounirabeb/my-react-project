@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-// Step 3 - Item component renders a single story
 const Item = ({ story }) => (
   <div>
     <h3>
@@ -15,7 +14,6 @@ const Item = ({ story }) => (
   </div>
 );
 
-// Step 2 - List receives stories as props
 const List = ({ stories }) => (
   <div>
     {stories.map((story) => (
@@ -24,29 +22,22 @@ const List = ({ stories }) => (
   </div>
 );
 
-// Step 5 - Search receives handler as prop
-const Search = ({ onSearch }) => {
-  console.log("Search renders");
-
-  const handleChange = (event) => {
-    onSearch(event.target.value);
-  };
-
-  return (
-    <div>
-      <label htmlFor="search">Search stories:</label>
-      <input type="text" id="search" onChange={handleChange} />
-    </div>
-  );
-};
+// Step 1 & 2 - Controlled component with destructuring
+const Search = ({ searchTerm, onSearch }) => (
+  <div>
+    <label htmlFor="search">Search stories:</label>
+    <input
+      type="text"
+      id="search"
+      value={searchTerm}
+      onChange={(event) => onSearch(event.target.value)}
+    />
+  </div>
+);
 
 const Header = () => <h1>Hacker News Stories</h1>;
 
-// Step 1 - App owns the data
 const App = () => {
-  console.log("App renders");
-
-  // Step 1 - stories moved inside App
   const stories = [
     {
       objectID: 1,
@@ -82,15 +73,20 @@ const App = () => {
     }
   ];
 
-  // Step 4 - state for search term
-  const [searchTerm, setSearchTerm] = useState("");
+  // Step 4 - Initialize state from localStorage with fallback
+  const [searchTerm, setSearchTerm] = useState(
+    localStorage.getItem("search") || ""
+  );
 
-  // Step 5 - handler to update state
+  // Step 5 - useEffect to persist searchTerm in localStorage
+  useEffect(() => {
+    localStorage.setItem("search", searchTerm);
+  }, [searchTerm]);
+
   const handleSearch = (value) => {
     setSearchTerm(value);
   };
 
-  // Step 8 - filter stories based on searchTerm
   const filteredStories = stories.filter((story) =>
     story.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -98,7 +94,7 @@ const App = () => {
   return (
     <div>
       <Header />
-      <Search onSearch={handleSearch} />
+      <Search searchTerm={searchTerm} onSearch={handleSearch} />
       <List stories={filteredStories} />
     </div>
   );
@@ -106,7 +102,7 @@ const App = () => {
 
 export default App;
 
-// Step 10 - Reflection:
-// 1. Props are read-only data passed from parent to child. State is data owned by a component that can change.
-// 2. We lift state up so that multiple components can share and react to the same data.
-// 3. Filtering logic should live in App because it owns both the data and the search term.
+// Step 7 - Reflection:
+// 1. A controlled component is an input whose value is controlled by React state
+// 2. A side effect is anything that affects something outside the component like localStorage or API calls
+// 3. We use useEffect so side effects run at the right time and not during rendering
